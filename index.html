@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bio-Derivatives: Food Security Malaysia</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 0 auto; padding: 20px; background-color: #f4f7f6; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1, h2 { color: #2c3e50; border-bottom: 2px solid #27ae60; padding-bottom: 10px; }
+        #info-box { background: #e8f5e9; border-left: 5px solid #27ae60; padding: 15px; margin-top: 20px; display: none; }
+        .formula-box { background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .data-source { font-size: 0.8em; color: #7f8c8d; font-style: italic; }
+        canvas { background: #fff; cursor: crosshair; }
+    </style>
+</head>
+<body>
+
+    <h1>Bioscience Calculus: Oil Palm Growth</h1>
+    
+    <div class="card">
+        <h2>The Scenario: Fruit Bunch Maturation</h2>
+        <p>In Malaysia's food security context, predicting the <strong>Rate of Change</strong> in crop biomass is vital. This graph models the growth of a Fresh Fruit Bunch (FFB) over a 20-week maturation cycle.</p>
+        
+        <div class="formula-box">
+            <strong>Growth Function (Logistic):</strong>
+            $$f(x) = \frac{L}{1 + e^{-k(x-x_0)}}$$
+            <strong>Rate of Change (Derivative):</strong>
+            $$f'(x) = k \cdot f(x) \cdot \left(1 - \frac{f(x)}{L}\right)$$
+        </div>
+        <p class="data-source">Parameters based on realistic MPOB (Malaysian Palm Oil Board) growth curves: $L=25kg, k=0.5, x_0=10$.</p>
+    </div>
+
+    <div class="card">
+        <p><strong>Instruction:</strong> Click anywhere on the line to calculate the instantaneous growth rate (derivative) at that specific week.</p>
+        <canvas id="growthChart" width="800" height="400"></canvas>
+        
+        <div id="info-box">
+            <h3 id="result-title">Week X Analysis</h3>
+            <p id="result-math"></p>
+            <p id="result-layman"></p>
+        </div>
+    </div>
+
+    <script>
+        const L = 25; // Carrying capacity (max kg)
+        const k = 0.5; // Growth rate coefficient
+        const x0 = 10; // Midpoint of growth (weeks)
+
+        // Logistic function f(x)
+        function f(x) {
+            return L / (1 + Math.exp(-k * (x - x0)));
+        }
+
+        // Derivative f'(x)
+        function fPrime(x) {
+            let fx = f(x);
+            return k * fx * (1 - (fx / L));
+        }
+
+        const labels = Array.from({length: 21}, (_, i) => i);
+        const dataPoints = labels.map(x => f(x));
+
+        const ctx = document.getElementById('growthChart').getContext('2d');
+        const growthChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Fruit Bunch Weight (kg)',
+                    data: dataPoints,
+                    borderColor: '#27ae60',
+                    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 5,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'top' } },
+                scales: {
+                    y: { title: { display: true, text: 'Weight (kg)' }, min: 0, max: 30 },
+                    x: { title: { display: true, text: 'Time (Weeks After Anthesis)' } }
+                },
+                onClick: (e) => {
+                    const points = growthChart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
+                    if (points.length) {
+                        const index = points[0].index;
+                        const week = labels[index];
+                        const weight = dataPoints[index].toFixed(2);
+                        const rate = fPrime(week).toFixed(2);
+                        displayAnalysis(week, weight, rate);
+                    }
+                }
+            }
+        });
+
+        function displayAnalysis(week, weight, rate) {
+            const box = document.getElementById('info-box');
+            const title = document.getElementById('result-title');
+            const math = document.getElementById('result-math');
+            const layman = document.getElementById('result-layman');
+
+            box.style.display = 'block';
+            title.innerText = `Analysis for Week ${week}`;
+            math.innerHTML = `<strong>Calculated Derivative:</strong> f'(${week}) = ${rate} kg/week.`;
+            
+            let explanation = "";
+            if (rate > 2) {
+                explanation = "This is the <strong>exponential phase</strong>. The fruit is accumulating oil and mass at its maximum speed. Fertilization and water levels are critical right now!";
+            } else if (week > 15) {
+                explanation = "The growth rate is slowing down as the fruit reaches <strong>maturity</strong>. It is almost ready for harvest.";
+            } else {
+                explanation = "The fruit is in the <strong>early lag phase</strong>. Initial cell division is happening, but visible mass increase is still slow.";
+            }
+            layman.innerHTML = `<strong>What this means:</strong> ${explanation}`;
+            
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    </script>
+</body>
+</html>
